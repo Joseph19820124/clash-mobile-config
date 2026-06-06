@@ -1,0 +1,196 @@
+# Shadowrocket Config for iPhone
+# 完全兼容 Shadowrocket 的 Clash 配置
+# 更新时间: 2026-06-06
+
+# 基础配置
+port: 7890
+socks-port: 7891
+allow-lan: true
+mode: rule
+log-level: info
+ipv6: false
+
+# DNS 配置（Shadowrocket 兼容版本）
+dns:
+  enable: true
+  listen: 0.0.0.0:53
+  enhanced-mode: redir-host
+  nameserver:
+    - 8.8.8.8
+    - 1.1.1.1
+  fallback:
+    - 8.8.4.4
+    - 1.0.0.1
+
+# 代理节点定义
+proxies:
+  # ===== 示例代理节点（请替换为你的实际节点）=====
+
+  # Shadowsocks 节点
+  - name: "🇺🇸 US-SS"
+    type: ss
+    server: us.example.com
+    port: 443
+    cipher: aes-256-gcm
+    password: "your-password-here"
+
+  # VMess 节点
+  - name: "🇭🇰 HK-VMess"
+    type: vmess
+    server: hk.example.com
+    port: 443
+    uuid: "your-uuid-here"
+    alterId: 0
+    cipher: auto
+    tls: true
+    skip-cert-verify: false
+
+  # Trojan 节点
+  - name: "🇯🇵 JP-Trojan"
+    type: trojan
+    server: jp.example.com
+    port: 443
+    password: "your-password-here"
+    skip-cert-verify: false
+
+  # VLESS 节点（如果 Shadowrocket 支持）
+  - name: "🇸🇬 SG-VLESS"
+    type: vless
+    server: sg.example.com
+    port: 443
+    uuid: "your-uuid-here"
+    cipher: auto
+    tls: true
+    skip-cert-verify: false
+
+# 代理组（策略组）
+proxy-groups:
+  # 自动选择 - 会自动测试延迟并选择最快的
+  - name: "⚡ Auto"
+    type: url-test
+    proxies:
+      - "🇺🇸 US-SS"
+      - "🇭🇰 HK-VMess"
+      - "🇯🇵 JP-Trojan"
+      - "🇸🇬 SG-VLESS"
+    url: "http://www.gstatic.com/generate_204"
+    interval: 300
+    tolerance: 50
+
+  # 手动选择
+  - name: "🔀 Select"
+    type: select
+    proxies:
+      - "⚡ Auto"
+      - "🇺🇸 US-SS"
+      - "🇭🇰 HK-VMess"
+      - "🇯🇵 JP-Trojan"
+      - "🇸🇬 SG-VLESS"
+      - "DIRECT"
+
+  # 国际流量
+  - name: "🌍 Global"
+    type: select
+    proxies:
+      - "⚡ Auto"
+      - "🔀 Select"
+      - "DIRECT"
+
+  # 中国流量（直连）
+  - name: "🇨🇳 China"
+    type: select
+    proxies:
+      - "DIRECT"
+      - "🔀 Select"
+
+# ===== 规则配置 =====
+# Shadowrocket 支持的规则类型：
+# - DOMAIN-SUFFIX: 域名后缀匹配
+# - DOMAIN: 完整域名匹配
+# - DOMAIN-KEYWORD: 域名关键字匹配
+# - IP-CIDR: IP 段匹配
+# - GEOIP: 地理位置匹配
+# - RULE-SET: 规则集（Shadowrocket 部分支持）
+
+rules:
+  # ===== 国内域名直连 =====
+  # 中文域名
+  - DOMAIN-SUFFIX,cn,DIRECT
+  - DOMAIN-SUFFIX,中国,DIRECT
+
+  # 中国主要网站
+  - DOMAIN-SUFFIX,baidu.com,DIRECT
+  - DOMAIN-SUFFIX,alibaba.com,DIRECT
+  - DOMAIN-SUFFIX,taobao.com,DIRECT
+  - DOMAIN-SUFFIX,jd.com,DIRECT
+  - DOMAIN-SUFFIX,qq.com,DIRECT
+  - DOMAIN-SUFFIX,weibo.com,DIRECT
+  - DOMAIN-SUFFIX,douyin.com,DIRECT
+  - DOMAIN-SUFFIX,bilibili.com,DIRECT
+  - DOMAIN-SUFFIX,netease.com,DIRECT
+  - DOMAIN-SUFFIX,sohu.com,DIRECT
+  - DOMAIN-SUFFIX,sina.com,DIRECT
+  - DOMAIN-SUFFIX,163.com,DIRECT
+  - DOMAIN-SUFFIX,ifeng.com,DIRECT
+  - DOMAIN-SUFFIX,tencent.com,DIRECT
+
+  # 国内 IP 地址
+  - GEOIP,CN,DIRECT
+
+  # ===== 国际网站（代理）=====
+  # 搜索引擎
+  - DOMAIN-SUFFIX,google.com,🌍 Global
+  - DOMAIN-SUFFIX,bing.com,🌍 Global
+  - DOMAIN-SUFFIX,duckduckgo.com,🌍 Global
+
+  # 社交媒体
+  - DOMAIN-SUFFIX,twitter.com,🌍 Global
+  - DOMAIN-SUFFIX,x.com,🌍 Global
+  - DOMAIN-SUFFIX,facebook.com,🌍 Global
+  - DOMAIN-SUFFIX,instagram.com,🌍 Global
+  - DOMAIN-SUFFIX,reddit.com,🌍 Global
+  - DOMAIN-SUFFIX,tiktok.com,🌍 Global
+
+  # 视频流媒体
+  - DOMAIN-SUFFIX,youtube.com,🌍 Global
+  - DOMAIN-SUFFIX,youtu.be,🌍 Global
+  - DOMAIN-SUFFIX,netflix.com,🌍 Global
+  - DOMAIN-SUFFIX,hulu.com,🌍 Global
+  - DOMAIN-SUFFIX,primevideo.com,🌍 Global
+  - DOMAIN-SUFFIX,twitch.tv,🌍 Global
+  - DOMAIN-SUFFIX,disneyplus.com,🌍 Global
+
+  # 代码托管
+  - DOMAIN-SUFFIX,github.com,🌍 Global
+  - DOMAIN-SUFFIX,gitlab.com,🌍 Global
+  - DOMAIN-SUFFIX,bitbucket.org,🌍 Global
+
+  # 编程工具
+  - DOMAIN-SUFFIX,stackoverflow.com,🌍 Global
+  - DOMAIN-SUFFIX,github.io,🌍 Global
+  - DOMAIN-SUFFIX,dev.to,🌍 Global
+
+  # 云服务
+  - DOMAIN-SUFFIX,aws.amazon.com,🌍 Global
+  - DOMAIN-SUFFIX,azure.microsoft.com,🌍 Global
+  - DOMAIN-SUFFIX,cloud.google.com,🌍 Global
+
+  # AI / LLM 服务
+  - DOMAIN-SUFFIX,openai.com,🌍 Global
+  - DOMAIN-SUFFIX,chatgpt.com,🌍 Global
+  - DOMAIN-SUFFIX,anthropic.com,🌍 Global
+  - DOMAIN-SUFFIX,claude.ai,🌍 Global
+  - DOMAIN-SUFFIX,huggingface.co,🌍 Global
+
+  # 苹果服务
+  - DOMAIN-SUFFIX,apple.com,DIRECT
+  - DOMAIN-SUFFIX,icloud.com,DIRECT
+  - DOMAIN-SUFFIX,apple-cloudkit.com,DIRECT
+
+  # 微软服务
+  - DOMAIN-SUFFIX,microsoft.com,DIRECT
+  - DOMAIN-SUFFIX,windows.net,DIRECT
+  - DOMAIN-SUFFIX,outlook.com,DIRECT
+
+  # 兜底规则
+  - MATCH,🌍 Global
