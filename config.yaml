@@ -1,0 +1,196 @@
+# Clash Config for iPhone
+# 适配 Stash / Shadowrocket / Surge
+# 更新时间: 2026-06-06
+
+# 混合端口配置
+port: 7890
+socks-port: 7891
+redir-port: 7892
+allow-lan: true
+bind-address: '*'
+mode: rule
+log-level: info
+
+# DNS 配置
+dns:
+  enable: true
+  ipv6: false
+  listen: 0.0.0.0:53
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  default-nameserver:
+    - 8.8.8.8
+    - 1.1.1.1
+  nameserver:
+    - 8.8.8.8
+    - 1.1.1.1
+  fallback:
+    - 8.8.4.4
+    - 1.0.0.1
+  fallback-filter:
+    geoip: true
+    ipcidr:
+      - 240.0.0.0/4
+      - 0.0.0.0/32
+
+# 代理节点定义
+proxies:
+  # ===== 示例代理节点（请替换为你的实际节点）=====
+  - name: "🇺🇸 US-01"
+    type: ss
+    server: us.example.com
+    port: 443
+    cipher: aes-256-gcm
+    password: "your-password-here"
+
+  - name: "🇭🇰 HK-01"
+    type: ss
+    server: hk.example.com
+    port: 443
+    cipher: aes-256-gcm
+    password: "your-password-here"
+
+  - name: "🇯🇵 JP-01"
+    type: vmess
+    server: jp.example.com
+    port: 443
+    uuid: "your-uuid-here"
+    alterId: 0
+    cipher: auto
+    tls: true
+    skip-cert-verify: false
+
+  - name: "🇸🇬 SG-01"
+    type: trojan
+    server: sg.example.com
+    port: 443
+    password: "your-password-here"
+    skip-cert-verify: false
+
+# 代理组（策略组）
+proxy-groups:
+  # 自动选择 - 延迟测试，自动选择最快节点
+  - name: "⚡ Auto"
+    type: url-test
+    proxies:
+      - "🇺🇸 US-01"
+      - "🇭🇰 HK-01"
+      - "🇯🇵 JP-01"
+      - "🇸🇬 SG-01"
+    url: "http://www.gstatic.com/generate_204"
+    interval: 300
+    tolerance: 50
+    timeout: 5000
+
+  # 手动选择
+  - name: "🔀 Select"
+    type: select
+    proxies:
+      - "⚡ Auto"
+      - "🇺🇸 US-01"
+      - "🇭🇰 HK-01"
+      - "🇯🇵 JP-01"
+      - "🇸🇬 SG-01"
+      - "DIRECT"
+
+  # 国际流量
+  - name: "🌍 Global"
+    type: select
+    proxies:
+      - "⚡ Auto"
+      - "🔀 Select"
+      - "DIRECT"
+
+  # 中国流量（直连）
+  - name: "🇨🇳 China"
+    type: select
+    proxies:
+      - "DIRECT"
+      - "🔀 Select"
+
+  # Apple 服务
+  - name: "🍎 Apple"
+    type: select
+    proxies:
+      - "DIRECT"
+      - "🔀 Select"
+
+  # 微软服务
+  - name: "🪟 Microsoft"
+    type: select
+    proxies:
+      - "DIRECT"
+      - "🔀 Select"
+
+  # 视频流媒体
+  - name: "🎬 Streaming"
+    type: select
+    proxies:
+      - "🔀 Select"
+      - "⚡ Auto"
+      - "DIRECT"
+
+# 规则集（Rule Providers）
+# 可选：使用在线规则集（推荐用于自动更新）
+rule-providers:
+  # China IP 地址库
+  china-ip:
+    type: http
+    behavior: ipcidr
+    path: ./ruleset/china-ip.yaml
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/cncidr.yaml
+    interval: 86400
+
+  # 中文网站
+  cn-domain:
+    type: http
+    behavior: domain
+    path: ./ruleset/cn-domain.yaml
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.yaml
+    interval: 86400
+
+  # 广告过滤
+  reject:
+    type: http
+    behavior: domain
+    path: ./ruleset/reject.yaml
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/reject.yaml
+    interval: 86400
+
+  # 国际网站
+  proxy:
+    type: http
+    behavior: domain
+    path: ./ruleset/proxy.yaml
+    url: https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/proxy.yaml
+    interval: 86400
+
+# 规则
+rules:
+  # 广告过滤
+  - RULE-SET,reject,REJECT
+
+  # 中国 IP（国内直连）
+  - RULE-SET,china-ip,DIRECT
+
+  # 中文域名（国内直连）
+  - RULE-SET,cn-domain,DIRECT
+
+  # 国际网站（代理）
+  - RULE-SET,proxy,🌍 Global
+
+  # 苹果服务
+  - DOMAIN-SUFFIX,apple.com,🍎 Apple
+  - DOMAIN-SUFFIX,icloud.com,🍎 Apple
+
+  # 微软服务
+  - DOMAIN-SUFFIX,microsoft.com,🪟 Microsoft
+  - DOMAIN-SUFFIX,windows.net,🪟 Microsoft
+
+  # 视频流媒体
+  - DOMAIN-SUFFIX,youtube.com,🎬 Streaming
+  - DOMAIN-SUFFIX,netflix.com,🎬 Streaming
+  - DOMAIN-SUFFIX,twitch.tv,🎬 Streaming
+
+  # 最后一条规则（兜底）
+  - MATCH,🌍 Global
